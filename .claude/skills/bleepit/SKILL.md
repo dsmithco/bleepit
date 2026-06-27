@@ -58,6 +58,6 @@ python3 bleepit.py --list
   target real profanity via `--level`.
 
 ## Browser version
-A zero-install, client-side web version (ffmpeg.wasm + in-browser Whisper) lives
-in `docs/` of this repo and is hosted on GitHub Pages — share that link with
-anyone on any OS who doesn't have Python/ffmpeg. See the repo README.
+A zero-install, client-side web version (ffmpeg.wasm + in-browser Whisper) is
+hosted at https://graysandtech.com/sandbox/bleepit/ — share that link with
+anyone on any OS who doesn't have Python/ffmpeg.

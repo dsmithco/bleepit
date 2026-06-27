@@ -1,45 +1,25 @@
 # bleepit
 
-Bleep words out of a video. It transcribes the audio, finds the words you want
-gone, mutes the original under each one, and drops a beep tone on top. The video
+A [Claude Code](https://code.claude.com/docs/en/overview) skill that bleeps
+words out of a video. It transcribes the audio, finds the words you want gone,
+mutes the original under each one, and drops a beep tone on top. The video
 stream is copied untouched — only the audio is re-encoded.
 
-There are **two ways to use it**:
-
-| | Best for | Needs |
-|---|---|---|
-| **🌐 Web app** | Sharing with anyone, any OS | Just a browser |
-| **⌨️ Claude Code skill** | Power users, batch/CLI work | Claude Code + ffmpeg + whisper |
+> **Just want to click a button?** There's a no-install, runs-in-your-browser
+> version at **https://graysandtech.com/sandbox/bleepit/** — drop in a video,
+> type the words, download the result. No Python, any OS. This repo is the
+> command-line / Claude Code skill.
 
 ---
 
-## 🌐 Web app (no install, any OS)
+## Use it as a Claude Code skill
 
-**→ https://dsmithco.github.io/bleepit/**
-
-Open the link, drop in a video, type the words (or pick a profanity level), hit
-**Bleep it**, download the result. Everything runs **in your browser** —
-ffmpeg compiled to WebAssembly plus an in-browser Whisper speech model. Your
-video is never uploaded anywhere.
-
-- No Python, no install, works on Mac / Windows / Linux / Chromebook.
-- First run downloads a ~150 MB speech model (cached after that).
-- Works best in **Chrome or Edge** (uses WebGPU for speed; falls back to slower
-  CPU elsewhere). Best for short clips — very large files can exhaust browser memory.
-
-Just share the link with someone — that's the whole "install."
-
----
-
-## ⌨️ Claude Code skill
-
-`bleepit` is packaged as a [Claude Code](https://code.claude.com/docs/en/overview)
-skill. Once it's in your skills folder, you can just say *"bleep out the word X
-from this video"* (or `/bleepit`) and Claude runs it.
+Once the skill is installed, just say *"bleep out the word X from this video"*
+(or `/bleepit`) and Claude runs it.
 
 ### 1. Run Claude Code
 
-You drive the skill from **Claude Code**, either in a terminal or inside VS Code:
+You drive the skill from **Claude Code**, in a terminal or inside VS Code:
 
 - **Terminal** — install and run from the command line:
   - Install (macOS / Linux / WSL): `curl -fsSL https://claude.ai/install.sh | bash`
@@ -58,14 +38,14 @@ You drive the skill from **Claude Code**, either in a terminal or inside VS Code
 Copy the skill folder into your Claude Code skills directory:
 
 ```bash
-# project-level (this repo) — already at .claude/skills/bleepit
-# or make it available everywhere:
+# make it available in every project:
 cp -r .claude/skills/bleepit ~/.claude/skills/bleepit
+# …or keep it project-local at .claude/skills/bleepit
 ```
 
 More on skills: [Claude Code skills docs](https://code.claude.com/docs/en/skills).
 
-### 3. Requirements (for the skill / CLI)
+### 3. Requirements
 
 The skill shells out to `ffmpeg` and OpenAI Whisper:
 
@@ -119,11 +99,13 @@ python3 bleepit.py --list
 ## Repo layout
 
 ```
-docs/                      # the web app (served by GitHub Pages)
-  index.html  app.js  coi-serviceworker.js
-.claude/skills/bleepit/    # the Claude Code skill
-  SKILL.md  bleepit.py
+.claude/skills/bleepit/
+  SKILL.md      # skill definition / how Claude invokes it
+  bleepit.py    # the CLI that does the work
 ```
+
+The browser version lives in the Gray Sand Technology site sandbox
+([graysandtech.com/sandbox/bleepit](https://graysandtech.com/sandbox/bleepit/)).
 
 ## License
 

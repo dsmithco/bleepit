@@ -4,7 +4,9 @@
 // mutes the original under each match and overlays a beep tone. Nothing leaves
 // the browser; no server, no upload.
 
-import { FFmpeg } from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js";
+// Vendored locally (same-origin) because @ffmpeg/ffmpeg spawns a module Worker
+// from import.meta.url — a cross-origin worker script is blocked by browsers.
+import { FFmpeg } from "./vendor/ffmpeg/index.js";
 import { fetchFile, toBlobURL } from "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js";
 import { pipeline, env } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3/+esm";
 

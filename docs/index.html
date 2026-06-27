@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>bleepit — censor words in a video, in your browser</title>
+<meta name="description" content="Bleep out words or profanity from a video. Runs entirely in your browser — no upload, no install." />
+<!-- Enables cross-origin isolation (SharedArrayBuffer) on GitHub Pages. Must run first. -->
+<script src="coi-serviceworker.js"></script>
+<style>
+  :root{
+    --bg:#0b0d12; --panel:#151922; --panel2:#1b212c; --line:#252c39;
+    --text:#e7ecf3; --muted:#8b95a7; --accent:#7c5cff; --accent2:#37e0c8;
+    --danger:#ff5d6c; --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(1100px 600px at 78% -8%, rgba(124,92,255,.20), transparent 60%),
+      radial-gradient(900px 520px at 8% 4%, rgba(55,224,200,.12), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font:15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:56px 22px 80px}
+  header{text-align:center;margin-bottom:34px}
+  .logo{font-weight:800;letter-spacing:-.03em;font-size:42px;
+    background:linear-gradient(92deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .logo .b{filter:saturate(1.2)}
+  .tag{color:var(--muted);margin-top:8px;font-size:15px}
+  .tag b{color:var(--text);font-weight:600}
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:22px;box-shadow:0 20px 50px -28px rgba(0,0,0,.8)}
+  .drop{border:1.5px dashed #36405220;border-color:#374152;border-radius:13px;
+    padding:30px 18px;text-align:center;cursor:pointer;transition:.15s;
+    background:rgba(255,255,255,.015)}
+  .drop:hover{border-color:var(--accent);background:rgba(124,92,255,.06)}
+  .drop.drag{border-color:var(--accent2);background:rgba(55,224,200,.08)}
+  .drop.has-file{border-style:solid;border-color:#2f6f5f;background:rgba(55,224,200,.05)}
+  .drop .icon{font-size:30px}
+  .drop .msg{margin-top:8px;color:var(--muted)}
+  .drop.has-file .msg{color:var(--text);font-weight:600}
+  .grid{display:grid;grid-template-columns:1fr 220px;gap:14px;margin-top:18px}
+  @media (max-width:560px){.grid{grid-template-columns:1fr}}
+  label{display:block;font-size:12.5px;color:var(--muted);margin:0 0 6px 2px;
+    text-transform:uppercase;letter-spacing:.06em}
+  input[type=text],select{width:100%;background:#0e121a;border:1px solid var(--line);
+    color:var(--text);border-radius:10px;padding:11px 12px;font-size:14px;outline:none}
+  input[type=text]:focus,select:focus{border-color:var(--accent)}
+  .hint{font-size:12px;color:var(--muted);margin:7px 2px 0}
+  .row{display:flex;gap:12px;align-items:center;margin-top:18px}
+  button.go{flex:1;border:0;border-radius:11px;padding:13px 18px;cursor:pointer;
+    font-weight:700;font-size:15px;color:#fff;
+    background:linear-gradient(92deg,var(--accent),#6048e6);
+    box-shadow:0 10px 24px -10px rgba(124,92,255,.8)}
+  button.go:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+  .status{color:var(--muted);font-size:13.5px;min-height:18px}
+  .log{margin-top:16px;background:#080a0f;border:1px solid var(--line);border-radius:11px;
+    padding:13px 14px;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+    color:#9fb0c8;white-space:pre-wrap;max-height:240px;overflow:auto}
+  .log:empty{display:none}
+  .result{margin-top:18px}
+  video{width:100%;border-radius:12px;border:1px solid var(--line);background:#000}
+  a.dl{display:inline-block;margin-top:12px;text-decoration:none;font-weight:700;
+    color:#04211c;background:linear-gradient(92deg,var(--accent2),#2bc7b1);
+    padding:11px 18px;border-radius:11px}
+  .note{margin-top:26px;color:var(--muted);font-size:12.5px;text-align:center;line-height:1.7}
+  .note code{background:#0e121a;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:#cbd5e6}
+  .note a{color:var(--accent2)}
+  .pill{display:inline-block;background:rgba(124,92,255,.14);border:1px solid #3a3170;
+    color:#c9bcff;border-radius:999px;padding:3px 10px;font-size:11.5px;margin:0 3px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">bl<span class="b">ee</span>pit</div>
+    <div class="tag">Bleep words out of a video — <b>entirely in your browser</b>. No upload, no install.</div>
+    <div style="margin-top:10px">
+      <span class="pill">100% client-side</span>
+      <span class="pill">any OS</span>
+      <span class="pill">no Python</span>
+    </div>
+  </header>
+
+  <div class="card">
+    <input id="file" type="file" accept="video/*,audio/*" hidden />
+    <div id="drop" class="drop">
+      <div class="icon">🎬</div>
+      <div id="dropmsg" class="msg">Drop a video here, or click to choose</div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <label for="words">Words to bleep</label>
+        <input id="words" type="text" placeholder="e.g. poop, heck — comma separated" />
+        <div class="hint">Exact words (case-insensitive). Leave blank to rely on the level.</div>
+      </div>
+      <div>
+        <label for="level">Profanity level</label>
+        <select id="level">
+          <option value="">None (custom words only)</option>
+          <option value="strong">Strong (worst only)</option>
+          <option value="standard">Standard</option>
+          <option value="strict">Strict (incl. mild)</option>
+        </select>
+        <div class="hint">Built-in tiers, cumulative.</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="go" class="go" disabled>Bleep it</button>
+    </div>
+    <div id="status" class="status" style="margin-top:10px"></div>
+    <pre id="log" class="log"></pre>
+
+    <div id="result" class="result" hidden>
+      <video id="player" controls playsinline></video>
+      <a id="download" class="dl" href="#">⬇ Download bleeped video</a>
+    </div>
+  </div>
+
+  <div class="note">
+    First run downloads a ~150&nbsp;MB speech model (cached afterward). Works best in
+    <b>Chrome/Edge</b> (WebGPU). Your video never leaves this browser.<br/>
+    Prefer the command line? This is also a Claude Code skill — see the
+    <a href="https://github.com/dsmithco/bleepit">repo &amp; README</a>.
+  </div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

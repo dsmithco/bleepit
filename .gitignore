@@ -1,0 +1,8 @@
+# Personal sample videos — don't publish to the repo
+*.MOV
+*.mov
+*.mp4
+*_bleeped.*
+
+# OS / editor
+.DS_Store
